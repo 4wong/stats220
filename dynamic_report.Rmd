@@ -1,0 +1,85 @@
+---
+title: My dynamic report
+output: html_fragment
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, error=FALSE)
+library(tidyverse)
+```
+
+```{css}
+h1, h2, h3 {
+  color: #2c3e50;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+
+```
+
+## Elevator observations
+
+### The data captures the number of people per elevator ride as well as whether the door got held for them, based on the time of day.
+
+```{r}
+logged_data <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSNm-RvFAz-pbg5S4jA76ZzFMY3DjPG6Bo_zQUHA30od3BJD3rtF3JyQC6y2Frg4sYIfygPaTgjGhb_/pub?gid=49751557&single=true&output=csv")
+
+latest_data <- logged_data %>%
+  rename(
+    timestamp = 1,
+    people_count = 2,
+    time_of_day = 3,         
+    door_held = 4    
+  )
+
+observations <- length(latest_data$people_count)
+max_people <- max(latest_data$people_count)
+min_people <- min(latest_data$people_count)
+mean_people <- sum(latest_data$people_count) / observations
+
+
+plot1 <- ggplot(latest_data, aes(x = people_count)) +
+  geom_bar(fill = "blue") +
+  labs(
+    title = "Elevator Occupancy Frequency",
+    subtitle = paste("Based on", observations, "observations"),
+    x = "Number of People in Elevator", 
+    y = "Number of Occurrences",
+    caption = "Data collected from daily elevator observations"
+  )
+  
+print(plot1)
+
+occupancy_counts <- table(latest_data$people_count)
+peak_occupancy <- names(which.max(occupancy_counts))
+peak_count <- max(occupancy_counts)
+
+paste("The most frequent occupancy was ", peak_occupancy, 
+      " people, occurring ", peak_count, 
+      " times (", round(100 * peak_count/length(latest_data$people_count)), 
+      "% of observations).", sep = "")
+
+
+plot2 <- ggplot(latest_data, aes(x = time_of_day, fill = door_held)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Door-Holding by Time of Day",
+    subtitle = "Comparison of people's courtesy across different times",
+    x = "Time Period",
+    y = "Number of Observations",
+    fill = "Was Door Held?",
+    caption = paste("Data collected from daily elevator observations")
+  )
+
+print(plot2)
+
+hold_rates <- tapply(latest_data$door_held == "Yes", latest_data$time_of_day, mean)
+least_held <- names(which.min(hold_rates))
+paste("The least frequent door-holding occurred in the ", least_held, 
+      " (", round(100 * min(hold_rates)), "% of the time).", sep = "")
+
+```
+
+
+![](https://c.tenor.com/-qBsG1HwR4oAAAAC/tenor.gif)
